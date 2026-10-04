@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm Tra Thường Xuyên HĐTN 11 - Chủ Đề 2: Khám Phá Bản Thân</title>
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS & QRCode.js & Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen p-3 md:p-6 flex flex-col items-center">
+
+  <!-- Header -->
+  <header class="w-full max-w-4xl bg-slate-900/90 border border-slate-800 p-4 md:p-5 rounded-2xl shadow-2xl flex flex-wrap justify-between items-center gap-4 mb-6 backdrop-blur-md">
+    <div>
+      <span class="bg-indigo-600/30 text-indigo-400 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-indigo-500/30">
+        HĐTN, HN 11 • Kết Nối Tri Thức
+      </span>
+      <h1 class="text-lg md:text-xl font-black text-white mt-1">KIỂM TRA THƯỜNG XUYÊN: CHỦ ĐỀ 2 - KHÁM PHÁ BẢN THÂN</h1>
+      <p class="text-xs text-slate-400">Thời gian làm bài: 15 phút • Thang điểm 10 • 30 câu trắc nghiệm</p>
+    </div>
+
+    <!-- Nút điều khiển giáo viên -->
+    <div class="flex items-center flex-wrap gap-2">
+      <button onclick="toggleQRModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-qrcode"></i> <span>Mã QR</span>
+      </button>
+      <button onclick="syncAllToGitHub()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-400 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center gap-1.5 shadow">
+        <i class="fa-brands fa-github"></i> <span>Lưu GitHub</span>
+      </button>
+      <button onclick="exportTeacherExcel()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5 shadow">
+        <i class="fa-solid fa-file-excel"></i> <span>Xuất Excel</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- GIAO DIỆN 1: MÀN HÌNH ĐĂNG KÝ THÔNG TIN LÀM BÀI (TRANG CHỦ) -->
+  <section id="screen-login" class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl text-center space-y-5">
+    <div class="w-16 h-16 bg-indigo-600/20 text-indigo-400 rounded-2xl flex items-center justify-center text-3xl mx-auto border border-indigo-500/30">
+      <i class="fa-solid fa-compass"></i>
+    </div>
+    
+    <div>
+      <h2 class="text-xl font-black text-white">Xác Nhận Thí Sinh Lớp 11</h2>
+      <p class="text-xs text-slate-400 mt-1">Chọn lớp và họ tên của em để nhận đề kiểm tra 15 phút</p>
+    </div>
+
+    <!-- Chọn thư mục Excel nếu mở trực tiếp offline -->
+    <div class="text-left bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+      <label class="text-[11px] font-bold text-slate-400 block mb-1">
+        <i class="fa-solid fa-folder-tree text-amber-400 mr-1"></i> Liên kết file danh sách (nếu mở cục bộ):
+      </label>
+      <input type="file" id="folderInput" webkitdirectory directory class="text-xs text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:bg-slate-800 file:text-slate-300 cursor-pointer" onchange="handleFolderSelect(event)">
+    </div>
+
+    <!-- Chọn lớp Khối 11 -->
+    <div class="text-left space-y-1.5">
+      <label class="text-xs font-bold text-slate-300">1. Chọn lớp học:</label>
+      <select id="select-class" onchange="loadStudentListByClass()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-indigo-500">
+        <option value="">-- Chọn lớp của em --</option>
+        <option value="11B3">Lớp 11B3</option>
+        <option value="11B5">Lớp 11B5</option>
+        <option value="11B7">Lớp 11B7</option>
+        <option value="11B8">Lớp 11B8</option>
+        <option value="11B9">Lớp 11B9</option>
+        <option value="11B12">Lớp 11B12</option>
+      </select>
+      <div id="class-status" class="text-[11px] text-slate-500 italic"></div>
+    </div>
+
+    <!-- Chọn tên học sinh -->
+    <div class="text-left space-y-1.5">
+      <label class="text-xs font-bold text-slate-300">2. Họ và tên học sinh:</label>
+      <select id="select-student" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-indigo-500" disabled>
+        <option value="">-- Vui lòng chọn lớp trước --</option>
+      </select>
+    </div>
+
+    <button onclick="startExam()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white font-black rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+      <span>BẮT ĐẦU LÀM BÀI (15 PHÚT)</span>
+      <i class="fa-solid fa-arrow-right text-xs"></i>
+    </button>
+  </section>
+
+  <!-- GIAO DIỆN 2: PHÒNG THI TRỰC TUYẾN -->
+  <section id="screen-exam" class="w-full max-w-4xl space-y-6 hidden">
+    
+    <!-- Thanh thông tin bài thi cố định -->
+    <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-wrap justify-between items-center gap-4 sticky top-2 z-20 backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center font-black">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <div class="text-sm font-black text-white" id="exam-student-name">Thí sinh: ...</div>
+          <div class="text-xs text-slate-400">
+            Lớp: <b class="text-sky-400" id="exam-student-class">...</b> | 
+            Mã đề: <span class="bg-amber-950/80 text-amber-300 font-black px-2 py-0.5 rounded border border-amber-600/40 text-xs" id="exam-code">1101</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Đồng hồ 15 phút & Nút nộp bài -->
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 flex items-center gap-2 text-amber-400 font-mono font-black text-sm">
+          <i class="fa-solid fa-stopwatch animate-pulse"></i>
+          <span id="exam-timer">15:00</span>
+        </div>
+        <button onclick="submitExam(false)" class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs md:text-sm rounded-xl shadow-md transition transform active:scale-95 flex items-center gap-1.5">
+          <i class="fa-solid fa-paper-plane text-xs"></i> <span>NỘP BÀI</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Thanh tiến độ -->
+    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+      <span>Tiến độ: <b id="progress-text" class="text-sky-400">0 / 30</b> câu</span>
+      <div class="w-1/2 bg-slate-800 rounded-full h-2 overflow-hidden">
+        <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-2 w-0 transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <!-- Danh sách câu hỏi -->
+    <div id="questions-container" class="space-y-4"></div>
+
+    <!-- Nút nộp bài cuối trang -->
+    <div class="text-center pt-4 pb-12">
+      <button onclick="submitExam(false)" class="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-base rounded-2xl shadow-xl hover:from-emerald-500 hover:to-teal-500 transition transform active:scale-95">
+        <i class="fa-solid fa-check-circle mr-2"></i> HOÀN THÀNH VÀ NỘP BÀI THI
+      </button>
+    </div>
+  </section>
+
+  <!-- GIAO DIỆN 3: KẾT QUẢ ĐIỂM SỐ -->
+  <section id="screen-result" class="w-full max-w-lg bg-slate-900/95 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl text-center space-y-6 hidden">
+    <div class="w-20 h-20 bg-amber-400/20 text-amber-400 rounded-full flex items-center justify-center text-4xl mx-auto shadow-inner">
+      <i class="fa-solid fa-award"></i>
+    </div>
+
+    <div>
+      <h2 class="text-2xl font-black text-white">KẾT QUẢ ĐÁNH GIÁ THƯỜNG XUYÊN</h2>
+      <p class="text-xs text-slate-400 mt-1" id="result-timestamp">Thời gian nộp: ...</p>
+    </div>
+
+    <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+      <div class="flex justify-between text-xs text-slate-400">
+        <span>Thí sinh: <b class="text-white" id="res-name">...</b></span>
+        <span>Lớp: <b class="text-white" id="res-class">...</b></span>
+        <span>Mã đề: <b class="text-amber-400" id="res-code">...</b></span>
+      </div>
+      <hr class="border-slate-800">
+      <div class="text-xs uppercase font-bold text-slate-400">ĐIỂM SỐ (THANG ĐIỂM 10)</div>
+      <div id="res-score-10" class="text-5xl font-black text-amber-400 animate-bounce">0.0</div>
+      <div class="text-xs font-semibold text-slate-400" id="res-correct-count">Đúng: 0 / 30 câu</div>
+    </div>
+
+    <!-- Nút trở về trang chủ -->
+    <div>
+      <button onclick="goHome()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white font-black text-sm rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-house"></i>
+        <span>TRỞ VỀ TRANG CHỦ</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- MODAL XEM MÃ QR -->
+  <div id="modal-qr" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full text-center space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+        <h3 class="text-sm font-black text-white">Quét Mã QR Làm Bài (HĐTN 11)</h3>
+        <button onclick="toggleQRModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="bg-white p-4 rounded-2xl inline-block shadow-lg mx-auto" id="qrcode-box"></div>
+      <p class="text-xs text-slate-400">Học sinh dùng điện thoại quét mã để mở trang làm bài kiểm tra.</p>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. CẤU HÌNH GITHUB ĐỂ LƯU ĐIỂM TỰ ĐỘNG
+    // =========================================================================
+    const GITHUB_CONFIG = {
+      owner: "Dang1981",
+      repo: "hdtn-11-chu-de-2", // Thay đổi cho đúng tên repo của thầy trên GitHub
+      filePath: "diem_hdtn11_chu_de_2.json",
+      branch: "main"
+    };
+
+    // =========================================================================
+    // 2. NGÂN HÀNG 30 CÂU HỎI HĐTN 11 - CHỦ ĐỀ 2: KHÁM PHÁ BẢN THÂN
+    // =========================================================================
+    const masterQuestions = [
+      // PHẦN 1: HOẠT ĐỘNG 1 - KHÁM PHÁ ĐẶC ĐIỂM RIÊNG CỦA BẢN THÂN
+      {
+        id: 1, lesson: "Hoạt động 1", level: "Nhận biết",
+        q: "Trong trò chơi 'Nhà báo đi tìm người nổi tiếng', nhân vật đóng vai 'nhà báo' được quyền đặt tối đa bao nhiêu câu hỏi đóng cho mọi người?",
+        options: ["1 – 2 câu hỏi", "3 – 5 câu hỏi", "6 – 8 câu hỏi", "10 câu hỏi"],
+        ans: 1,
+        exp: "Trong trò chơi 'Nhà báo đi tìm người nổi tiếng', 'nhà báo' được quyền đặt ra 3 - 5 câu hỏi đóng."
+      },
+      {
+        id: 2, lesson: "Hoạt động 1", level: "Nhận biết",
+        q: "Bài học chính rút ra sau khi tham gia trò chơi 'Nhà báo đi tìm người nổi tiếng' là gì?",
+        options: [
+          "Tất cả mọi người đều có tính cách và sở thích giống nhau.",
+          "Mỗi người đều có những đặc điểm riêng làm nên bản sắc cá nhân và không ai giống ai hoàn toàn.",
+          "Chỉ có người nổi tiếng mới sở hữu những đặc điểm nổi bật.",
+          "Đặc điểm cá nhân không thể nhận biết thông qua quan sát."
+        ],
+        ans: 1,
+        exp: "Mỗi người đều có những đặc điểm riêng, làm nên bản sắc cá nhân của người đó; không ai giống ai hoàn toàn."
+      },
+      {
+        id: 3, lesson: "Hoạt động 1", level: "Nhận biết",
+        q: "Theo hướng dẫn của Hoạt động 1, việc xác định đặc điểm riêng của bản thân KHÔNG bao gồm khía cạnh nào sau đây?",
+        options: [
+          "Hứng thú, sở thích, thói quen",
+          "Sức khỏe, năng lực, sở trường",
+          "Phẩm chất và kĩ năng sống",
+          "Số lượng tài sản tài chính của gia đình"
+        ],
+        ans: 3,
+        exp: "Đặc điểm riêng bản thân gồm: Hứng thú, sở thích; Sức khỏe; Năng lực, sở trường; Phẩm chất; Kĩ năng sống (không bao gồm tài sản gia đình)."
+      },
+      {
+        id: 4, lesson: "Hoạt động 1", level: "Thông hiểu",
+        q: "Khi xác định hứng thú và sở trường là 'Vẽ tranh', ngành nghề tương lai phù hợp được gợi ý trong bài học bao gồm:",
+        options: [
+          "Tiếp viên hàng không, Hướng dẫn viên, Phi công",
+          "Họa sĩ, Kiến trúc sư, Nhà thiết kế",
+          "Bác sĩ, Dược sĩ, Y sĩ",
+          "Kĩ sư máy tính, Chuyên gia phần mềm"
+        ],
+        ans: 1,
+        exp: "Hứng thú/sở trường 'Vẽ tranh' liên quan đến nhóm nghề: Họa sĩ, Kiến trúc sư, Nhà thiết kế."
+      },
+      {
+        id: 5, lesson: "Hoạt động 1", level: "Thông hiểu",
+        q: "Hứng thú và sở trường 'Đi nhiều nơi' liên quan đến định hướng nhóm nghề nghiệp nào trong tương lai?",
+        options: [
+          "Tiếp viên hàng không, Hướng dẫn viên, Phi công",
+          "Họa sĩ, Kiến trúc sư, Nhà thiết kế",
+          "Kế toán, Thủ quỹ, Kiểm toán viên",
+          "Biên tập viên, Nhà văn, Thủ thư"
+        ],
+        ans: 0,
+        exp: "Hứng thú 'Đi nhiều nơi' hướng tới các nghề: Tiếp viên hàng không, Hướng dẫn viên, Phi công."
+      },
+      {
+        id: 6, lesson: "Hoạt động 1", level: "Nhận biết",
+        q: "Trong hoạt động xác định đặc điểm riêng, kí hiệu dấu cộng (+) được quy ước dùng để đánh dấu yếu tố nào?",
+        options: [
+          "Điểm yếu của bản thân",
+          "Điểm mạnh của bản thân",
+          "Hứng thú, sở trường liên quan đến nghề nghiệp tương lai",
+          "Những kĩ năng cần loại bỏ"
+        ],
+        ans: 1,
+        exp: "Quy ước: Đánh dấu (+) vào những điểm mạnh của bản thân."
+      },
+      {
+        id: 7, lesson: "Hoạt động 1", level: "Nhận biết",
+        q: "Kí hiệu dấu trừ (-) được quy ước sử dụng để đánh dấu đối tượng nào trong bảng đặc điểm riêng?",
+        options: [
+          "Điểm mạnh của bản thân",
+          "Điểm yếu (điểm hạn chế) của bản thân",
+          "Sở thích cá nhân",
+          "Mối quan hệ xã hội"
+        ],
+        ans: 1,
+        exp: "Quy ước: Đánh dấu (-) vào những điểm yếu (điểm hạn chế) của bản thân."
+      },
+      {
+        id: 8, lesson: "Hoạt động 1", level: "Thông hiểu",
+        q: "Kí hiệu dấu sao (*) được dùng để đánh dấu điều gì khi phân tích đặc điểm bản thân?",
+        options: [
+          "Điểm yếu cần khắc phục gấp",
+          "Hứng thú, sở trường liên quan đến định hướng nghề nghiệp trong tương lai",
+          "Điểm mạnh nổi bật nhất",
+          "Những nhiệm vụ đã hoàn thành"
+        ],
+        ans: 1,
+        exp: "Quy ước: Đánh dấu (*) vào những hứng thú, sở trường liên quan đến nghề nghiệp tương lai."
+      },
+      {
+        id: 9, lesson: "Hoạt động 1", level: "Vận dụng",
+        q: "Ý nghĩa cốt lõi của việc xác định điểm mạnh và điểm hạn chế của bản thân là gì?",
+        options: [
+          "Để so sánh và tự ti với những người xung quanh.",
+          "Để tự hoàn thiện bản thân trên cơ sở phát huy điểm mạnh và từng bước khắc phục điểm hạn chế.",
+          "Để thay đổi hoàn toàn tính cách của mình sao cho giống người khác.",
+          "Để che giấu khuyết điểm với bạn bè và thầy cô."
+        ],
+        ans: 1,
+        exp: "Xác định điểm mạnh, điểm hạn chế giúp mỗi chúng ta tự hoàn thiện bản thân, phát huy sở trường và khắc phục khuyết điểm."
+      },
+      {
+        id: 10, lesson: "Hoạt động 1", level: "Vận dụng cao",
+        q: "Nhóm từ nào sau đây gồm các ví dụ về đặc điểm riêng thuộc khía cạnh ngoại hình được gợi ý trong bài học?",
+        options: [
+          "Năng động, tự tin, mạnh mẽ",
+          "Hát hay, viết chữ đẹp, kể chuyện cười",
+          "Mắt to, mũm mĩm, da ngăm, da trắng, mặt tròn, tóc đen nhánh",
+          "Giao tiếp bằng tiếng Anh, thuyết trình tự tin"
+        ],
+        ans: 2,
+        exp: "Đặc điểm ngoại hình gợi ý: Mắt to, mũm mĩm, da ngăm, da trắng, mặt tròn, tóc đen nhánh."
+      },
+
+      // PHẦN 2: HOẠT ĐỘNG 2 - CÁCH THỂ HIỆN SỰ TỰ TIN ĐỐI VỚI ĐẶC ĐIỂM RIÊNG
+      {
+        id: 11, lesson: "Hoạt động 2", level: "Nhận biết",
+        q: "Nhóm đặc điểm nào sau đây thể hiện đặc điểm riêng về tính cách của bản thân?",
+        options: [
+          "Mắt to, da ngăm, mặt tròn",
+          "Năng động, tự tin, mạnh mẽ, nhẹ nhàng, dịu dàng, phóng khoáng",
+          "Hát hay, viết chữ đẹp, sử dụng máy tính thành thạo",
+          "Chiều cao, cân nặng, màu tóc"
+        ],
+        ans: 1,
+        exp: "Tính cách: Năng động, tự tin, mạnh mẽ, nhẹ nhàng, dịu dàng, phóng khoáng."
+      },
+      {
+        id: 12, lesson: "Hoạt động 2", level: "Nhận biết",
+        q: "Yếu tố nào dưới đây là ví dụ về đặc điểm riêng thuộc năng khiếu, khả năng hoặc sở trường của cá nhân?",
+        options: [
+          "Da trắng, mặt tròn, tóc đen nhánh",
+          "Nhẹ nhàng, dịu dàng, phóng khoáng",
+          "Hát hay, viết chữ đẹp, kể chuyện cười, sử dụng máy tính thành thạo, giao tiếp bằng tiếng Anh, thuyết trình tự tin",
+          "Mũm mĩm, da ngăm, mắt to"
+        ],
+        ans: 2,
+        exp: "Khả năng, sở trường: Hát hay, viết chữ đẹp, kể chuyện cười, thành thạo máy tính, giao tiếp tiếng Anh..."
+      },
+      {
+        id: 13, lesson: "Hoạt động 2", level: "Thông hiểu",
+        q: "Biểu hiện nào sau đây cho thấy sự tự tin đối với những đặc điểm riêng của bản thân?",
+        options: [
+          "E ngại, giấu giếm khả năng vì sợ người khác đánh giá.",
+          "Chủ động giới thiệu, xung phong nhận nhiệm vụ phù hợp với khả năng, chủ động tham gia hoạt động yêu thích, mạnh dạn thể hiện khả năng.",
+          "Chỉ tham gia hoạt động khi bị bắt buộc.",
+          "Từ chối mọi nhiệm vụ được tập thể giao cho."
+        ],
+        ans: 1,
+        exp: "Tự tin biểu hiện ở việc chủ động giới thiệu, xung phong nhận nhiệm vụ, mạnh dạn thể hiện khả năng."
+      },
+      {
+        id: 14, lesson: "Hoạt động 2", level: "Thông hiểu",
+        q: "Khi chia sẻ về những đặc điểm riêng của mình với người khác, thái độ ứng xử cần có là gì?",
+        options: [
+          "Tự tin vào những đặc điểm riêng của bản thân.",
+          "Xấu hổ và e ngại về những điểm khác biệt của mình.",
+          "Tỏ ra kiêu ngạo và coi thường khả năng của bạn bè.",
+          "Giấu kín tất cả những điểm mạnh của bản thân."
+        ],
+        ans: 0,
+        exp: "Khi chia sẻ cần giữ thái độ tự tin vào những nét riêng biệt của bản thân."
+      },
+      {
+        id: 15, lesson: "Hoạt động 2", level: "Vận dụng",
+        q: "Phương án nào KHÔNG phải là cách thể hiện sự tự tin đối với đặc điểm riêng được nêu trong nội dung bài học?",
+        options: [
+          "Chủ động giới thiệu bản thân",
+          "Xung phong nhận nhiệm vụ phù hợp với khả năng",
+          "Rụt rè, chối bỏ khả năng của bản thân",
+          "Mạnh dạn thể hiện khả năng của mình"
+        ],
+        ans: 2,
+        exp: "Rụt rè, chối bỏ khả năng là hành động thể hiện sự thiếu tự tin."
+      },
+
+      // PHẦN 3: HOẠT ĐỘNG 3 - CÁCH ĐIỀU CHỈNH BẢN THÂN ĐỂ THÍCH ỨNG VỚI SỰ THAY ĐỔI
+      {
+        id: 16, lesson: "Hoạt động 3", level: "Nhận biết",
+        q: "Theo bài học, những sự thay đổi mà con người có thể phải đối mặt trong cuộc sống bao gồm:",
+        options: [
+          "Điều kiện sống, môi trường sống",
+          "Học tập, làm việc; Mối quan hệ trong xã hội",
+          "Hoàn cảnh kinh tế và đời sống tình cảm gia đình",
+          "Tất cả các phương án trên"
+        ],
+        ans: 3,
+        exp: "Thay đổi bao gồm: Điều kiện/môi trường sống, học tập/làm việc, quan hệ xã hội, hoàn cảnh kinh tế/gia đình."
+      },
+      {
+        id: 17, lesson: "Hoạt động 3", level: "Nhận biết",
+        q: "Nhóm phẩm chất nào cần thiết để giúp con người thích ứng tốt với sự thay đổi trong cuộc sống?",
+        options: [
+          "Tự tin, tự lập, nghị lực, vượt khó, có trách nhiệm, tính cách cởi mở, hòa đồng",
+          "Ích kỷ, bảo thủ, thụ động",
+          "Phụ thuộc, trông chờ hoàn toàn vào người khác",
+          "Tránh né thực tế, lo sợ thay đổi"
+        ],
+        ans: 0,
+        exp: "Phẩm chất thích ứng: Tự tin, tự lập, nghị lực, vượt khó, có trách nhiệm, cởi mở, hòa đồng."
+      },
+      {
+        id: 18, lesson: "Hoạt động 3", level: "Thông hiểu",
+        q: "Để thích ứng với sự thay đổi, yêu cầu về mặt năng lực bao gồm những yếu tố nào?",
+        options: [
+          "Mềm dẻo và linh hoạt, ra quyết định và giải quyết vấn đề, đặt mục tiêu",
+          "Cố chấp giữ nguyên thói quen cũ trong mọi hoàn cảnh",
+          "Né tránh việc đưa ra quyết định",
+          "Từ bỏ mục tiêu ngay khi gặp trở ngại"
+        ],
+        ans: 0,
+        exp: "Năng lực thích ứng: Mềm dẻo, linh hoạt, khả năng ra quyết định, giải quyết vấn đề và đặt mục tiêu."
+      },
+      {
+        id: 19, lesson: "Hoạt động 3", level: "Thông hiểu",
+        q: "Kĩ năng sống quan trọng nào được nhắc đến giúp bản thân thích ứng với sự thay đổi?",
+        options: [
+          "Lập kế hoạch, quản lí cảm xúc",
+          "Giấu kín cảm xúc tiêu cực không chia sẻ",
+          "Làm việc tùy hứng không theo kế hoạch",
+          "Buông xuôi theo hoàn cảnh"
+        ],
+        ans: 0,
+        exp: "Kĩ năng sống thích ứng cốt lõi gồm: Lập kế hoạch và quản lí cảm xúc."
+      },
+      {
+        id: 20, lesson: "Hoạt động 3", level: "Vận dụng",
+        q: "Bước đầu tiên trong cách điều chỉnh bản thân để thích ứng với sự thay đổi là gì?",
+        options: [
+          "Kiên trì rèn luyện ngay mà không cần đánh giá bản thân.",
+          "Xác định những điểm bản thân cần điều chỉnh bằng cách so sánh, đối chiếu đặc điểm bản thân với các yêu cầu thích ứng.",
+          "Nhờ người khác lập kế hoạch hộ mình.",
+          "Bỏ qua các điểm hạn chế của cá nhân."
+        ],
+        ans: 1,
+        exp: "Bước 1: Xác định những điểm bản thân cần điều chỉnh bằng cách so sánh, đối chiếu đặc điểm bản thân với yêu cầu thích ứng."
+      },
+      {
+        id: 21, lesson: "Hoạt động 3", level: "Vận dụng cao",
+        q: "Quy trình điều chỉnh bản thân để thích ứng với sự thay đổi gồm 3 bước theo đúng thứ tự là:",
+        options: [
+          "Lập kế hoạch -> Kiên trì rèn luyện -> Xác định điểm cần điều chỉnh",
+          "Xác định những điểm bản thân cần điều chỉnh -> Lập kế hoạch để điều chỉnh những điểm đó -> Kiên trì rèn luyện theo kế hoạch đã lập",
+          "Kiên trì rèn luyện -> Xác định điểm cần điều chỉnh -> Lập kế hoạch",
+          "Lập kế hoạch -> Xác định điểm cần điều chỉnh -> Đánh giá kết quả"
+        ],
+        ans: 1,
+        exp: "3 bước điều chỉnh: 1. Xác định điểm cần điều chỉnh -> 2. Lập kế hoạch điều chỉnh -> 3. Kiên trì rèn luyện theo kế hoạch."
+      },
+
+      // PHẦN 4: HOẠT ĐỘNG 4 - THIẾT KẾ VÀ TRÌNH BÀY SẢN PHẨM GIỚI THIỆU ĐẶC ĐIỂM RIÊNG
+      {
+        id: 22, lesson: "Hoạt động 4", level: "Nhận biết",
+        q: "Yêu cầu thực hiện của Hoạt động 4 là gì?",
+        options: [
+          "Lựa chọn và thiết kế một sản phẩm thể hiện những đặc điểm riêng của bản thân, sau đó giới thiệu sản phẩm với các bạn trong nhóm và trước lớp.",
+          "Mua một sản phẩm có sẵn để mang đến lớp giới thiệu.",
+          "Sao chép hoàn toàn sản phẩm của bạn học cùng nhóm.",
+          "Viết một bài kiểm tra lý thuyết về các loại đặc điểm riêng."
+        ],
+        ans: 0,
+        exp: "Yêu cầu: Lựa chọn và thiết kế sản phẩm thể hiện đặc điểm riêng, sau đó giới thiệu sản phẩm với các bạn trong nhóm và trước lớp."
+      },
+      {
+        id: 23, lesson: "Hoạt động 4", level: "Nhận biết",
+        q: "Những hình thức thể hiện sản phẩm giới thiệu đặc điểm riêng được gợi ý trong bài học bao gồm:",
+        options: [
+          "Tranh tự họa, Làm thơ, Bài hát, Đọc rap",
+          "Bài viết, Sơ đồ tư duy, Video, Tấu hài",
+          "Cả A và B đều đúng",
+          "Chỉ có hình thức viết bài văn xuôi"
+        ],
+        ans: 2,
+        exp: "Hình thức đa dạng gồm: Tranh tự họa, thơ, bài hát, rap, bài viết, sơ đồ tư duy, video, tấu hài."
+      },
+      {
+        id: 24, lesson: "Hoạt động 4", level: "Thông hiểu",
+        q: "Nếu một học sinh có năng khiếu hài hước và diễn xuất, hình thức thể hiện sản phẩm giới thiệu đặc điểm riêng phù hợp nhất được gợi ý trong bài học là:",
+        options: [
+          "Tấu hài hoặc Video",
+          "Giải bài tập Toán",
+          "May vá trang phục",
+          "Vẽ sơ đồ kĩ thuật"
+        ],
+        ans: 0,
+        exp: "Học sinh có năng khiếu hài hước, diễn xuất phù hợp với hình thức Tấu hài hoặc quay Video."
+      },
+      {
+        id: 25, lesson: "Hoạt động 4", level: "Vận dụng",
+        q: "Hình thức thể hiện sản phẩm nào phù hợp cho học sinh muốn trình bày thông tin về bản thân một cách hệ thống, sử dụng sơ đồ và từ khóa?",
+        options: [
+          "Sơ đồ tư duy",
+          "Đọc rap",
+          "Hát đơn ca",
+          "Tấu hài"
+        ],
+        ans: 0,
+        exp: "Sơ đồ tư duy là phương pháp trực quan giúp hệ thống hóa thông tin bản thân thông qua sơ đồ và từ khóa."
+      },
+
+      // PHẦN 5: HOẠT ĐỘNG 5 - XÂY DỰNG KẾ HOẠCH ĐIỀU CHỈNH BẢN THÂN
+      {
+        id: 26, lesson: "Hoạt động 5", level: "Nhận biết",
+        q: "Kế hoạch điều chỉnh bản thân để thích ứng với sự thay đổi cần được xây dựng theo mấy nội dung chính?",
+        options: [
+          "2 nội dung",
+          "3 nội dung",
+          "4 nội dung (Những điều bản thân cần điều chỉnh, Biện pháp thực hiện, Thời gian thực hiện, Người hỗ trợ)",
+          "5 nội dung"
+        ],
+        ans: 2,
+        exp: "Kế hoạch gồm 4 nội dung chính: 1. Điều cần điều chỉnh; 2. Biện pháp thực hiện; 3. Thời gian thực hiện; 4. Người hỗ trợ."
+      },
+      {
+        id: 27, lesson: "Hoạt động 5", level: "Thông hiểu",
+        q: "Trong bảng gợi ý kế hoạch điều chỉnh bản thân, đối với vấn đề 'Hay lo lắng, hồi hộp khi đến những nơi lạ, tiếp xúc với người lạ', biện pháp thực hiện được đưa ra là:",
+        options: [
+          "Hít thở sâu để lấy lại bình tĩnh; Suy nghĩ tích cực để tự trấn an bản thân.",
+          "Bỏ về nhà ngay lập tức và không tiếp xúc với ai.",
+          "Tránh né hoàn toàn việc đi đến các địa điểm mới.",
+          "Nổi cáu với những người xung quanh."
+        ],
+        ans: 0,
+        exp: "Biện pháp: Hít thở sâu để lấy lại bình tĩnh; Suy nghĩ tích cực để tự trấn an bản thân."
+      },
+      {
+        id: 28, lesson: "Hoạt động 5", level: "Nhận biết",
+        q: "Khi điều chỉnh bản thân đối với vấn đề 'Dễ nổi nóng, cáu giận với người xung quanh hay những điều bản thân cảm thấy không hài lòng', các biện pháp thực hiện ĐƯỢC GỢI Ý gồm:",
+        options: [
+          "Hít thở sâu trong 10 giây; Mở lòng, chia sẻ với người thân, bạn bè.",
+          "Quên tức giận bằng việc đi tìm niềm vui; Hạ 'cái tôi' của bản thân.",
+          "Đọc sách, nghe nhạc,...",
+          "Tất cả các biện pháp trên."
+        ],
+        ans: 3,
+        exp: "Các biện pháp hạ cơn nóng giận: Hít thở sâu 10s, chia sẻ, tìm niềm vui, hạ cái tôi, nghe nhạc, đọc sách..."
+      },
+      {
+        id: 29, lesson: "Hoạt động 5", level: "Vận dụng",
+        q: "Việc xác định người hỗ trợ trong kế hoạch điều chỉnh bản thân nhằm mục đích gì?",
+        options: [
+          "Để người hỗ trợ làm thay toàn bộ các biện pháp trong kế hoạch.",
+          "Tìm kiếm sự đồng hành, giúp đỡ, nhắc nhở từ thầy cô, người thân, bạn bè để thực hiện điều chỉnh hiệu quả hơn.",
+          "Để quy trách nhiệm khi kế hoạch không thành công.",
+          "Để hoàn thành thủ tục giấy tờ trên lớp."
+        ],
+        ans: 1,
+        exp: "Người hỗ trợ (thầy cô, bạn bè, người thân) giúp đồng hành, động viên và nhắc nhở rèn luyện hiệu quả."
+      },
+      {
+        id: 30, lesson: "Hoạt động 5", level: "Vận dụng cao",
+        q: "Hướng dẫn về nhà sau khi kết thúc Bài học (Hoạt động 4, 5) yêu cầu học sinh làm gì?",
+        options: [
+          "Ôn lại kiến thức đã học, làm bài tập trong SBT Hoạt động trải nghiệm 11, đọc và tìm hiểu trước nội dung Chủ đề 2 – Hoạt động 6.",
+          "Không cần làm bài tập hay chuẩn bị bài mới.",
+          "Đọc trước nội dung của Chủ đề 3.",
+          "Chuẩn bị cho bài thi học kì ngay lập tức."
+        ],
+        ans: 0,
+        exp: "Về nhà: Ôn lại kiến thức, làm bài tập SBT HĐTN 11, chuẩn bị trước Hoạt động 6 của Chủ đề 2."
+      }
+    ];
+
+    // =========================================================================
+    // 3. TẠO 5 MÃ ĐỀ & THUẬT TOÁN XÁO TRỘN ĐỀ THI
+    // =========================================================================
+    const examCodes = ["1101", "1102", "1103", "1104", "1105"];
+    let currentExamData = [];
+    let currentStudentAnswers = {};
+    let selectedStudentInfo = { className: "", studentName: "", examCode: "" };
+    let timerInterval = null;
+    let secondsLeft = 15 * 60; // 15 PHÚT (900 GIÂY)
+    let teacherGradeBook = [];
+
+    // Hàm chuyển mã an toàn chuỗi văn bản không bị lỗi giao diện
+    function safeHTML(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function generateShuffledExam(code) {
+      let seed = parseInt(code) || 1101;
+      function pseudoRandom() {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      }
+
+      let qList = JSON.parse(JSON.stringify(masterQuestions));
+      for (let i = qList.length - 1; i > 0; i--) {
+        const j = Math.floor(pseudoRandom() * (i + 1));
+        [qList[i], qList[j]] = [qList[j], qList[i]];
+      }
+
+      qList.forEach(q => {
+        let correctContent = q.options[q.ans];
+        for (let i = q.options.length - 1; i > 0; i--) {
+          const j = Math.floor(pseudoRandom() * (i + 1));
+          [q.options[i], q.options[j]] = [q.options[j], q.options[i]];
+        }
+        q.ans = q.options.indexOf(correctContent);
+      });
+
+      return qList;
+    }
+
+    // =========================================================================
+    // 4. TỰ ĐỘNG NẠP DANH SÁCH HỌC SINH TỪ EXCEL KHỐI 11
+    // =========================================================================
+    let localFilesMap = {};
+    const defaultStudents = [
+      "Nguyễn Hoàng Nam", "Trần Thị Mai Anh", "Lê Văn Tuấn", "Phạm Minh Hoàng",
+      "Đỗ Bích Ngọc", "Vũ Quốc Bảo", "Nguyễn Thu Hà", "Bùi Thanh Trúc",
+      "Đặng Đình Phong", "Hoàng Kim Ngân", "Trịnh Tiến Đạt", "Lương Mỹ Duyên"
+    ];
+
+    function handleFolderSelect(e) {
+      localFilesMap = {};
+      for (let file of e.target.files) {
+        if (file.name.endsWith(".xlsx") || file.name.endsWith(".xls")) {
+          localFilesMap[file.name] = file;
+        }
+      }
+      document.getElementById('class-status').innerHTML = `<span class="text-emerald-400">Đã liên kết ${Object.keys(localFilesMap).length} file Excel từ thư mục máy tính!</span>`;
+      loadStudentListByClass();
+    }
+
+    async function loadStudentListByClass() {
+      const cls = document.getElementById('select-class').value;
+      const studentSelect = document.getElementById('select-student');
+      const statusEl = document.getElementById('class-status');
+      
+      studentSelect.innerHTML = '<option value="">-- Đang nạp danh sách... --</option>';
+      studentSelect.disabled = true;
+      if (!cls) {
+        studentSelect.innerHTML = '<option value="">-- Vui lòng chọn lớp trước --</option>';
+        return;
+      }
+
+      const fileName = `${cls}.xlsx`;
+
+      if (localFilesMap[fileName]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          parseExcelAndPopulate(e.target.result, cls);
+        };
+        reader.readAsArrayBuffer(localFilesMap[fileName]);
+        return;
+      }
+
+      try {
+        const res = await fetch(`./${fileName}`);
+        if (!res.ok) throw new Error("Chưa thấy file");
+        const buf = await res.arrayBuffer();
+        parseExcelAndPopulate(buf, cls);
+      } catch (err) {
+        statusEl.innerHTML = `<span class="text-amber-400">Dùng danh sách mẫu tạm thời (${cls})</span>`;
+        populateSelect(defaultStudents, cls);
+      }
+    }
+
+    function parseExcelAndPopulate(buffer, cls) {
+      try {
+        const wb = XLSX.read(buffer, { type: 'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        const names = [];
+
+        for (let i = 1; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r || r.length === 0) continue;
+          let fullName = r[2] ? `${r[1] || ''} ${r[2]}`.trim() : (r[1] || r[0]);
+          if (fullName && typeof fullName === 'string' && fullName.length > 2 && !fullName.toLowerCase().includes('họ và tên')) {
+            names.push(fullName.trim());
+          }
+        }
+
+        if (names.length > 0) {
+          document.getElementById('class-status').innerHTML = `<span class="text-emerald-400">Đã tìm thấy ${names.length} học sinh lớp ${cls} từ file Excel.</span>`;
+          populateSelect(names, cls);
+        } else {
+          populateSelect(defaultStudents, cls);
+        }
+      } catch (e) {
+        populateSelect(defaultStudents, cls);
+      }
+    }
+
+    function populateSelect(names, cls) {
+      const studentSelect = document.getElementById('select-student');
+      studentSelect.innerHTML = '<option value="">-- Chọn tên của em --</option>' +
+        names.map(name => `<option value="${name}">${name}</option>`).join('');
+      studentSelect.disabled = false;
+    }
+
+    // =========================================================================
+    // 5. BẮT ĐẦU VÀO PHÒNG LÀM BÀI 15 PHÚT
+    // =========================================================================
+    function startExam() {
+      const cls = document.getElementById('select-class').value;
+      const name = document.getElementById('select-student').value;
+
+      if (!cls) { alert("Vui lòng chọn lớp học!"); return; }
+      if (!name) { alert("Vui lòng chọn họ và tên học sinh!"); return; }
+
+      const assignedCode = examCodes[Math.floor(Math.random() * examCodes.length)];
+
+      selectedStudentInfo = {
+        className: cls,
+        studentName: name,
+        examCode: assignedCode,
+        startTime: new Date().toLocaleTimeString('vi-VN')
+      };
+
+      currentExamData = generateShuffledExam(assignedCode);
+      currentStudentAnswers = {};
+
+      document.getElementById('exam-student-name').innerText = `Thí sinh: ${name}`;
+      document.getElementById('exam-student-class').innerText = cls;
+      document.getElementById('exam-code').innerText = assignedCode;
+
+      renderExamQuestions();
+
+      document.getElementById('screen-login').classList.add('hidden');
+      document.getElementById('screen-exam').classList.remove('hidden');
+
+      startExamTimer();
+    }
+
+    function renderExamQuestions() {
+      const container = document.getElementById('questions-container');
+      container.innerHTML = currentExamData.map((item, idx) => `
+        <div class="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl shadow-lg space-y-3" id="q-card-${idx}">
+          <div class="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-slate-800">
+            <span class="font-bold text-sky-400">Câu ${idx + 1} / 30 [${safeHTML(item.level)}]</span>
+            <span class="text-slate-500">${safeHTML(item.lesson)}</span>
+          </div>
+
+          <p class="text-sm md:text-base font-semibold text-slate-100 leading-relaxed">${safeHTML(item.q)}</p>
+
+          <div class="space-y-2 pt-1">
+            ${item.options.map((opt, optIdx) => `
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:bg-slate-800/60 hover:border-slate-700 cursor-pointer transition text-xs md:text-sm font-medium text-slate-200">
+                <input type="radio" name="question_${idx}" value="${optIdx}" onchange="selectAnswer(${idx},${optIdx})" class="mt-0.5 text-indigo-600 focus:ring-0">
+                <span class="font-bold text-sky-400 shrink-0">${String.fromCharCode(65 + optIdx)}.</span>
+                <span class="leading-relaxed font-sans">${safeHTML(opt)}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectAnswer(qIdx, optIdx) {
+      currentStudentAnswers[qIdx] = optIdx;
+      
+      const card = document.getElementById(`q-card-${qIdx}`);
+      card.classList.add('border-indigo-500/50');
+
+      const answeredCount = Object.keys(currentStudentAnswers).length;
+      document.getElementById('progress-text').innerText = `${answeredCount} / 30`;
+      document.getElementById('progress-bar').style.width = `${(answeredCount / 30) * 100}%`;
+    }
+
+    function startExamTimer() {
+      secondsLeft = 15 * 60; // 15 PHÚT = 900 GIÂY
+      clearInterval(timerInterval);
+
+      timerInterval = setInterval(() => {
+        secondsLeft--;
+        const mins = Math.floor(secondsLeft / 60);
+        const secs = secondsLeft % 60;
+        document.getElementById('exam-timer').innerText = 
+          `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+        if (secondsLeft <= 0) {
+          clearInterval(timerInterval);
+          alert("Hết 15 phút làm bài! Hệ thống đang tự động thu bài.");
+          submitExam(true);
+        }
+      }, 1000);
+    }
+
+    // =========================================================================
+    // 6. CHẤM ĐIỂM (THANG 10) & XUẤT KẾT QUẢ
+    // =========================================================================
+    function submitExam(isAuto = false) {
+      const answeredCount = Object.keys(currentStudentAnswers).length;
+      if (!isAuto && answeredCount < 30) {
+        if (!confirm(`Em mới hoàn thành ${answeredCount} / 30 câu hỏi. Em có chắc chắn muốn nộp bài sớm không?`)) {
+          return;
+        }
+      }
+
+      clearInterval(timerInterval);
+
+      let correctCount = 0;
+      currentExamData.forEach((q, idx) => {
+        if (currentStudentAnswers[idx] === q.ans) {
+          correctCount++;
+        }
+      });
+
+      const score10 = ((correctCount / 30) * 10).toFixed(2);
+      const nowStr = new Date().toLocaleTimeString('vi-VN') + " " + new Date().toLocaleDateString('vi-VN');
+      
+      teacherGradeBook.push({
+        name: selectedStudentInfo.studentName,
+        className: selectedStudentInfo.className,
+        code: selectedStudentInfo.examCode,
+        correct: `${correctCount}/30`,
+        score: score10,
+        time: nowStr
+      });
+
+      document.getElementById('screen-exam').classList.add('hidden');
+      document.getElementById('screen-result').classList.remove('hidden');
+
+      document.getElementById('res-name').innerText = selectedStudentInfo.studentName;
+      document.getElementById('res-class').innerText = selectedStudentInfo.className;
+      document.getElementById('res-code').innerText = selectedStudentInfo.examCode;
+      document.getElementById('res-score-10').innerText = score10;
+      document.getElementById('res-correct-count').innerText = `Đúng: ${correctCount} / 30 câu`;
+      document.getElementById('result-timestamp').innerText = `Thời gian nộp bài: ${nowStr}`;
+
+      confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    }
+
+    function goHome() {
+      clearInterval(timerInterval);
+      currentStudentAnswers = {};
+      currentExamData = [];
+      document.getElementById('select-student').value = "";
+      document.getElementById('screen-result').classList.add('hidden');
+      document.getElementById('screen-exam').classList.add('hidden');
+      document.getElementById('screen-login').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // =========================================================================
+    // 7. LƯU ĐIỂM LÊN GITHUB
+    // =========================================================================
+    async function syncAllToGitHub() {
+      if (teacherGradeBook.length === 0) {
+        alert("Chưa có dữ liệu bài làm nào để lưu lên GitHub!");
+        return;
+      }
+
+      let token = localStorage.getItem("gh_token_hdtn11");
+      if (!token) {
+        token = prompt("Nhập GitHub Personal Access Token (chỉ giáo viên nhập 1 lần):");
+        if (!token) {
+          alert("Chưa có token, không thể lưu lên GitHub!");
+          return;
+        }
+        localStorage.setItem("gh_token_hdtn11", token.trim());
+      }
+
+      const url = `https://api.github.com/repos/${GITHUB_CONFIG.owner}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.filePath}`;
+
+      try {
+        let existingData = [];
+        let sha = null;
+
+        const getRes = await fetch(url, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          }
+        });
+
+        if (getRes.status === 200) {
+          const fileInfo = await getRes.json();
+          sha = fileInfo.sha;
+          const contentStr = decodeURIComponent(escape(atob(fileInfo.content)));
+          existingData = JSON.parse(contentStr);
+        }
+
+        const combinedData = [...existingData, ...teacherGradeBook];
+        const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(combinedData, null, 2))));
+
+        const putRes = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: `Cập nhật ${teacherGradeBook.length} kết quả HĐTN 11 Chủ đề 2`,
+            content: updatedContent,
+            branch: GITHUB_CONFIG.branch,
+            sha: sha
+          })
+        });
+
+        if (putRes.ok) {
+          alert(`Đã đồng bộ thành công ${teacherGradeBook.length} kết quả lên GitHub repository!`);
+        } else {
+          const err = await putRes.json();
+          alert(`Lỗi khi lưu lên GitHub: ${err.message}`);
+        }
+      } catch (error) {
+        console.error("Lỗi:", error);
+        alert("Không thể kết nối đến GitHub API.");
+      }
+    }
+
+    // =========================================================================
+    // 8. XUẤT FILE EXCEL & TẠO QR CODE
+    // =========================================================================
+    function exportTeacherExcel() {
+      if (teacherGradeBook.length === 0) {
+        alert("Chưa có học sinh nào nộp bài để xuất bảng điểm!");
+        return;
+      }
+
+      const rows = [
+        ["STT", "HỌ VÀ TÊN", "LỚP", "MÃ ĐỀ", "SỐ CÂU ĐÚNG", "ĐIỂM (THANG 10)", "THỜI GIAN NỘP BÀI"]
+      ];
+
+      teacherGradeBook.forEach((st, idx) => {
+        rows.push([idx + 1, st.name, st.className, st.code, st.correct, st.score, st.time]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 6 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 16 }, { wch: 22 }];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "DiemHDTN11");
+
+      XLSX.writeFile(wb, `BangDiem_HDTN11_ChuDe2_15Phut.xlsx`);
+    }
+
+    function toggleQRModal() {
+      const modal = document.getElementById('modal-qr');
+      modal.classList.toggle('hidden');
+
+      if (!modal.classList.contains('hidden')) {
+        const box = document.getElementById('qrcode-box');
+        box.innerHTML = '';
+        new QRCode(box, {
+          text: window.location.href,
+          width: 200,
+          height: 200
+        });
+      }
+    }
+  </script>
+</body>
+</html>
